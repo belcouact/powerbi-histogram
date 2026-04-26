@@ -1,0 +1,30 @@
+import powerbi from "powerbi-visuals-api";
+import "./../style/visual.less";
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import IVisual = powerbi.extensibility.visual.IVisual;
+export declare class Visual implements IVisual {
+    private target;
+    private svg;
+    private mainGroup;
+    private formattingSettings;
+    private formattingSettingsService;
+    private tooltipServiceWrapper;
+    private selectionManager;
+    private host;
+    private viewModel;
+    private margin;
+    constructor(options: VisualConstructorOptions);
+    private calculateNiceNumber;
+    private calculateAutoBins;
+    private percentile;
+    update(options: VisualUpdateOptions): void;
+    private transformData;
+    private buildTooltipInfo;
+    private render;
+    private renderParetoLine;
+    private attachBarEvents;
+    private clearVisual;
+    private updateSelectionVisuals;
+    getFormattingModel(): powerbi.visuals.FormattingModel;
+}

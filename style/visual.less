@@ -1,0 +1,46 @@
+.histogram-svg {
+    overflow: visible;
+}
+
+.histogram-svg .bars rect {
+    transition: fill-opacity 0.15s ease-in-out;
+}
+
+.histogram-svg .pareto-line {
+    pointer-events: none;
+}
+
+.histogram-svg .pareto-markers circle {
+    pointer-events: none;
+}
+
+.histogram-svg .grid-lines line {
+    pointer-events: none;
+}
+
+.histogram-svg .x-axis text,
+.histogram-svg .y-axis text,
+.histogram-svg .pareto-axis text {
+    font-size: 11px;
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+}
+
+.histogram-svg .x-axis path,
+.histogram-svg .y-axis path,
+.histogram-svg .pareto-axis path {
+    stroke: #ccc;
+}
+
+.histogram-svg .x-axis line,
+.histogram-svg .y-axis line,
+.histogram-svg .pareto-axis line {
+    stroke: #e0e0e0;
+}
+
+.histogram-svg .x-axis-title,
+.histogram-svg .y-axis-title {
+    font-size: 12px;
+    font-weight: 600;
+    font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+    fill: #333;
+}
