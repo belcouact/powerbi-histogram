@@ -5,10 +5,10 @@
 			{
 				"resourceId": "rId0",
 				"sourceType": 5,
-				"file": "resources/histogramVisualE7A47FC60C2E490595136C0B8DCCF4B3.pbiviz.json"
+				"file": "resources/histogramVisual.pbiviz.json"
 			}
 		],
-		"visual": {"name":"histogramVisual","displayName":"Histogram Chart","guid":"histogramVisualE7A47FC60C2E490595136C0B8DCCF4B3","visualClassName":"Visual","version":"1.0.0.0","description":"Advanced histogram visual with Pareto line, interactive selection, and rich tooltips","supportUrl":"https://github.com/example/histogramVisual","gitHubUrl":""},
+		"visual": {"name":"histogramVisual","displayName":"Histogram Chart","guid":"histogramVisual","visualClassName":"Visual","version":"1.0.0.0","description":"Advanced histogram visual with Pareto line, interactive selection, and rich tooltips","supportUrl":"https://github.com/example/histogramVisual","gitHubUrl":""},
 		"metadata": {
 			"pbivizjson": {
 				"resourceId": "rId0"

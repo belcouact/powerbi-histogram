@@ -1,254 +1,350 @@
 {
-    "dataRoles": [
-        {
-            "displayName": "Values",
-            "name": "Values",
-            "kind": "Grouping",
-            "description": "Numeric values to create histogram bins"
-        }
-    ],
-    "objects": {
-        "binningSettings": {
-            "displayName": "Binning",
-            "properties": {
-                "binMode": {
-                    "displayName": "Binning Mode",
-                    "type": { "enumeration": [
-                        { "displayName": "Auto", "value": "auto" },
-                        { "displayName": "Fixed Count", "value": "fixedCount" },
-                        { "displayName": "Fixed Width", "value": "fixedWidth" }
-                    ]}
-                },
-                "binCount": {
-                    "displayName": "Number of Bins",
-                    "type": { "numeric": true }
-                },
-                "binWidth": {
-                    "displayName": "Bin Width",
-                    "type": { "numeric": true }
-                }
-            }
-        },
-        "xAxisSettings": {
-            "displayName": "X-Axis Range",
-            "properties": {
-                "useManualXAxis": {
-                    "displayName": "Manual Range",
-                    "type": { "bool": true }
-                },
-                "xAxisMin": {
-                    "displayName": "Min Value",
-                    "type": { "numeric": true }
-                },
-                "xAxisMax": {
-                    "displayName": "Max Value",
-                    "type": { "numeric": true }
-                },
-                "manualBinSize": {
-                    "displayName": "Bin Size",
-                    "type": { "numeric": true }
-                },
-                "outlierMode": {
-                    "displayName": "Outlier Handling",
-                    "type": { "enumeration": [
-                        { "displayName": "Include All", "value": "includeAll" },
-                        { "displayName": "Cap to Range", "value": "capToRange" },
-                        { "displayName": "Trim Percentage", "value": "trimPercentage" }
-                    ]}
-                },
-                "trimPercent": {
-                    "displayName": "Trim % (each side)",
-                    "type": { "numeric": true }
-                }
-            }
-        },
-        "barAppearanceSettings": {
-            "displayName": "Bars",
-            "properties": {
-                "barColor": {
-                    "displayName": "Bar Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "barOpacity": {
-                    "displayName": "Bar Opacity",
-                    "type": { "numeric": true }
-                },
-                "showBorder": {
-                    "displayName": "Show Border",
-                    "type": { "bool": true }
-                },
-                "borderColor": {
-                    "displayName": "Border Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "borderWidth": {
-                    "displayName": "Border Width",
-                    "type": { "numeric": true }
-                },
-                "barGap": {
-                    "displayName": "Bar Gap (%)",
-                    "type": { "numeric": true }
-                }
-            }
-        },
-        "dataLabelSettings": {
-            "displayName": "Data Labels",
-            "properties": {
-                "showDataLabels": {
-                    "displayName": "Show Data Labels",
-                    "type": { "bool": true }
-                },
-                "dataLabelType": {
-                    "displayName": "Label Type",
-                    "type": { "enumeration": [
-                        { "displayName": "Frequency", "value": "frequency" },
-                        { "displayName": "Percentage", "value": "percentage" },
-                        { "displayName": "Both", "value": "both" }
-                    ]}
-                },
-                "dataLabelColor": {
-                    "displayName": "Label Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "dataLabelFontSize": {
-                    "displayName": "Font Size",
-                    "type": { "numeric": true }
-                }
-            }
-        },
-        "paretoSettings": {
-            "displayName": "Pareto Line",
-            "properties": {
-                "showParetoLine": {
-                    "displayName": "Show Pareto Line",
-                    "type": { "bool": true }
-                },
-                "paretoLineColor": {
-                    "displayName": "Line Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "paretoLineWidth": {
-                    "displayName": "Line Width",
-                    "type": { "numeric": true }
-                },
-                "showParetoAxis": {
-                    "displayName": "Show Secondary Axis",
-                    "type": { "bool": true }
-                },
-                "paretoLineStyle": {
-                    "displayName": "Line Style",
-                    "type": { "enumeration": [
-                        { "displayName": "Solid", "value": "solid" },
-                        { "displayName": "Dashed", "value": "dashed" },
-                        { "displayName": "Dotted", "value": "dotted" }
-                    ]}
-                },
-                "showParetoMarkers": {
-                    "displayName": "Show Markers",
-                    "type": { "bool": true }
-                },
-                "showParetoLabels": {
-                    "displayName": "Show Data Labels",
-                    "type": { "bool": true }
-                },
-                "paretoLabelColor": {
-                    "displayName": "Label Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "paretoLabelFontSize": {
-                    "displayName": "Font Size",
-                    "type": { "numeric": true }
-                }
-            }
-        },
-        "axisSettings": {
-            "displayName": "Axis",
-            "properties": {
-                "showXAxis": {
-                    "displayName": "Show X Axis",
-                    "type": { "bool": true }
-                },
-                "showYAxis": {
-                    "displayName": "Show Y Axis",
-                    "type": { "bool": true }
-                },
-                "xAxisTitle": {
-                    "displayName": "X Axis Title",
-                    "type": { "text": true }
-                },
-                "yAxisTitle": {
-                    "displayName": "Y Axis Title",
-                    "type": { "text": true }
-                },
-                "xAxisLabelAngle": {
-                    "displayName": "X Axis Label Angle",
-                    "type": { "numeric": true }
-                },
-                "showGridLines": {
-                    "displayName": "Show Grid Lines",
-                    "type": { "bool": true }
-                },
-                "gridLineColor": {
-                    "displayName": "Grid Line Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                }
-            }
-        },
-        "tooltipSettings": {
-            "displayName": "Tooltip",
-            "properties": {
-                "showStatistics": {
-                    "displayName": "Show Statistics",
-                    "type": { "bool": true }
-                },
-                "showBinRange": {
-                    "displayName": "Show Bin Range",
-                    "type": { "bool": true }
-                },
-                "showPercentage": {
-                    "displayName": "Show Percentage",
-                    "type": { "bool": true }
-                },
-                "showCumulative": {
-                    "displayName": "Show Cumulative",
-                    "type": { "bool": true }
-                }
-            }
-        },
-        "selectionSettings": {
-            "displayName": "Selection",
-            "properties": {
-                "enableSelection": {
-                    "displayName": "Enable Selection",
-                    "type": { "bool": true }
-                },
-                "multiSelect": {
-                    "displayName": "Multi-Select (Ctrl+Click)",
-                    "type": { "bool": true }
-                },
-                "selectionColor": {
-                    "displayName": "Selection Color",
-                    "type": { "fill": { "solid": { "color": true } } }
-                }
-            }
-        }
+  "dataRoles": [
+    {
+      "displayName": "Detail",
+      "name": "detail",
+      "kind": "Grouping",
+      "description": "Row identifier to preserve individual data points (e.g., Sample Number)"
     },
-    "dataViewMappings": [
-        {
-            "conditions": [
-                {
-                    "Values": { "max": 1 }
-                }
-            ],
-            "categorical": {
-                "categories": {
-                    "for": { "in": "Values" }
-                }
-            }
+    {
+      "displayName": "Values",
+      "name": "Values",
+      "kind": "GroupingOrMeasure",
+      "description": "Numeric values to create histogram bins, or categorical values for frequency chart"
+    },
+    {
+      "displayName": "USL",
+      "name": "USL",
+      "kind": "Measure",
+      "description": "Upper Specification Limit"
+    },
+    {
+      "displayName": "LSL",
+      "name": "LSL",
+      "kind": "Measure",
+      "description": "Lower Specification Limit"
+    }
+  ],
+  "objects": {
+    "binningSettings": {
+      "displayName": "Binning",
+      "properties": {
+        "binMode": {
+          "displayName": "Binning Mode",
+          "type": {
+            "enumeration": [
+              { "displayName": "Auto", "value": "auto" },
+              { "displayName": "Fixed Count", "value": "fixedCount" },
+              { "displayName": "Fixed Width", "value": "fixedWidth" }
+            ]
+          }
+        },
+        "binCount": {
+          "displayName": "Number of Bins",
+          "type": { "numeric": true }
+        },
+        "binWidth": {
+          "displayName": "Bin Width",
+          "type": { "numeric": true }
         }
-    ],
-    "privileges": [],
-    "supportsLandingPage": true,
-    "supportsMultiVisualSelection": true,
-    "supportsHighlight": true
+      }
+    },
+    "xAxisSettings": {
+      "displayName": "X-Axis Range",
+      "properties": {
+        "useManualXAxis": {
+          "displayName": "Manual Range",
+          "type": { "bool": true }
+        },
+        "xAxisMin": {
+          "displayName": "Min Value",
+          "type": { "numeric": true }
+        },
+        "xAxisMax": {
+          "displayName": "Max Value",
+          "type": { "numeric": true }
+        },
+        "manualBinSize": {
+          "displayName": "Bin Size",
+          "type": { "numeric": true }
+        },
+        "outlierMode": {
+          "displayName": "Outlier Handling",
+          "type": {
+            "enumeration": [
+              { "displayName": "Include All", "value": "includeAll" },
+              { "displayName": "Cap to Range", "value": "capToRange" },
+              { "displayName": "Trim Percentage", "value": "trimPercentage" }
+            ]
+          }
+        },
+        "trimPercent": {
+          "displayName": "Trim % (each side)",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "barAppearanceSettings": {
+      "displayName": "Bars",
+      "properties": {
+        "barColor": {
+          "displayName": "Bar Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "barOpacity": {
+          "displayName": "Bar Opacity",
+          "type": { "numeric": true }
+        },
+        "showBorder": {
+          "displayName": "Show Border",
+          "type": { "bool": true }
+        },
+        "borderColor": {
+          "displayName": "Border Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "borderWidth": {
+          "displayName": "Border Width",
+          "type": { "numeric": true }
+        },
+        "barGap": {
+          "displayName": "Bar Gap (%)",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "dataLabelSettings": {
+      "displayName": "Data Labels",
+      "properties": {
+        "showDataLabels": {
+          "displayName": "Show Data Labels",
+          "type": { "bool": true }
+        },
+        "dataLabelType": {
+          "displayName": "Label Type",
+          "type": {
+            "enumeration": [
+              { "displayName": "Frequency", "value": "frequency" },
+              { "displayName": "Percentage", "value": "percentage" },
+              { "displayName": "Both", "value": "both" }
+            ]
+          }
+        },
+        "dataLabelColor": {
+          "displayName": "Label Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "dataLabelFontSize": {
+          "displayName": "Font Size",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "paretoSettings": {
+      "displayName": "Pareto Line",
+      "properties": {
+        "showParetoLine": {
+          "displayName": "Show Pareto Line",
+          "type": { "bool": true }
+        },
+        "paretoLineColor": {
+          "displayName": "Line Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "paretoLineWidth": {
+          "displayName": "Line Width",
+          "type": { "numeric": true }
+        },
+        "showParetoAxis": {
+          "displayName": "Show Secondary Axis",
+          "type": { "bool": true }
+        },
+        "paretoLineStyle": {
+          "displayName": "Line Style",
+          "type": {
+            "enumeration": [
+              { "displayName": "Solid", "value": "solid" },
+              { "displayName": "Dashed", "value": "dashed" },
+              { "displayName": "Dotted", "value": "dotted" }
+            ]
+          }
+        },
+        "showParetoMarkers": {
+          "displayName": "Show Markers",
+          "type": { "bool": true }
+        },
+        "showParetoLabels": {
+          "displayName": "Show Data Labels",
+          "type": { "bool": true }
+        },
+        "paretoLabelColor": {
+          "displayName": "Label Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "paretoLabelFontSize": {
+          "displayName": "Font Size",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "axisSettings": {
+      "displayName": "Axis",
+      "properties": {
+        "showXAxis": {
+          "displayName": "Show X Axis",
+          "type": { "bool": true }
+        },
+        "showYAxis": {
+          "displayName": "Show Y Axis",
+          "type": { "bool": true }
+        },
+        "xAxisTitle": {
+          "displayName": "X Axis Title",
+          "type": { "text": true }
+        },
+        "yAxisTitle": {
+          "displayName": "Y Axis Title",
+          "type": { "text": true }
+        },
+        "xAxisLabelAngle": {
+          "displayName": "X Axis Label Angle",
+          "type": { "numeric": true }
+        },
+        "showGridLines": {
+          "displayName": "Show Grid Lines",
+          "type": { "bool": true }
+        },
+        "gridLineColor": {
+          "displayName": "Grid Line Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        }
+      }
+    },
+    "tooltipSettings": {
+      "displayName": "Tooltip",
+      "properties": {
+        "showStatistics": {
+          "displayName": "Show Statistics",
+          "type": { "bool": true }
+        },
+        "showBinRange": {
+          "displayName": "Show Bin Range",
+          "type": { "bool": true }
+        },
+        "showPercentage": {
+          "displayName": "Show Percentage",
+          "type": { "bool": true }
+        },
+        "showCumulative": {
+          "displayName": "Show Cumulative",
+          "type": { "bool": true }
+        }
+      }
+    },
+    "selectionSettings": {
+      "displayName": "Selection",
+      "properties": {
+        "enableSelection": {
+          "displayName": "Enable Selection",
+          "type": { "bool": true }
+        },
+        "multiSelect": {
+          "displayName": "Multi-Select (Ctrl+Click)",
+          "type": { "bool": true }
+        },
+        "selectionColor": {
+          "displayName": "Selection Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        }
+      }
+    },
+    "specLimitsSettings": {
+      "displayName": "Spec Limits",
+      "properties": {
+        "showUSL": {
+          "displayName": "Show USL Line",
+          "type": { "bool": true }
+        },
+        "uslColor": {
+          "displayName": "USL Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "uslLineStyle": {
+          "displayName": "USL Line Style",
+          "type": { "enumeration": [
+            { "displayName": "Solid", "value": "solid" },
+            { "displayName": "Dashed", "value": "dashed" },
+            { "displayName": "Dotted", "value": "dotted" }
+          ]}
+        },
+        "uslThickness": {
+          "displayName": "USL Thickness",
+          "type": { "numeric": true }
+        },
+        "showLSL": {
+          "displayName": "Show LSL Line",
+          "type": { "bool": true }
+        },
+        "lslColor": {
+          "displayName": "LSL Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "lslLineStyle": {
+          "displayName": "LSL Line Style",
+          "type": { "enumeration": [
+            { "displayName": "Solid", "value": "solid" },
+            { "displayName": "Dashed", "value": "dashed" },
+            { "displayName": "Dotted", "value": "dotted" }
+          ]}
+        },
+        "lslThickness": {
+          "displayName": "LSL Thickness",
+          "type": { "numeric": true }
+        }
+      }
+    },
+    "statsSummarySettings": {
+      "displayName": "Stats Summary",
+      "properties": {
+        "showStatsSummary": {
+          "displayName": "Show Stats Summary",
+          "type": { "bool": true }
+        },
+        "statsSummaryColor": {
+          "displayName": "Text Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "statsSummaryFontSize": {
+          "displayName": "Font Size",
+          "type": { "numeric": true }
+        }
+      }
+    }
+  },
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "Values": { "max": 1 }
+        }
+      ],
+      "table": {
+        "rows": {
+          "select": [
+            { "for": { "in": "detail" }, "min": 0 },
+            { "for": { "in": "Values" } },
+            { "for": { "in": "USL" }, "min": 0 },
+            { "for": { "in": "LSL" }, "min": 0 }
+          ],
+          "dataReductionAlgorithm": {
+            "top": { "count": 30000 }
+          }
+        }
+      }
+    }
+  ],
+  "privileges": [],
+  "supportsLandingPage": true,
+  "supportsMultiVisualSelection": true,
+  "supportsHighlight": true
 }

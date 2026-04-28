@@ -420,6 +420,119 @@ class SelectionSettingsCard extends FormattingSettingsCard {
     ];
 }
 
+class SpecLimitsCard extends FormattingSettingsCard {
+    showUSL = new formattingSettings.ToggleSwitch({
+        name: "showUSL",
+        displayName: "Show USL Line",
+        value: true
+    });
+
+    uslColor = new formattingSettings.ColorPicker({
+        name: "uslColor",
+        displayName: "USL Color",
+        value: { value: "#e74c3c" }
+    });
+
+    uslLineStyle = new formattingSettings.ItemDropdown({
+        name: "uslLineStyle",
+        displayName: "USL Line Style",
+        items: [
+            { displayName: "Solid", value: "solid" },
+            { displayName: "Dashed", value: "dashed" },
+            { displayName: "Dotted", value: "dotted" }
+        ],
+        value: { displayName: "Solid", value: "solid" }
+    });
+
+    uslThickness = new formattingSettings.NumUpDown({
+        name: "uslThickness",
+        displayName: "USL Thickness",
+        value: 2,
+        options: {
+            minValue: { value: 1, type: powerbi.visuals.ValidatorType.Min },
+            maxValue: { value: 8, type: powerbi.visuals.ValidatorType.Max }
+        }
+    });
+
+    showLSL = new formattingSettings.ToggleSwitch({
+        name: "showLSL",
+        displayName: "Show LSL Line",
+        value: true
+    });
+
+    lslColor = new formattingSettings.ColorPicker({
+        name: "lslColor",
+        displayName: "LSL Color",
+        value: { value: "#27ae60" }
+    });
+
+    lslLineStyle = new formattingSettings.ItemDropdown({
+        name: "lslLineStyle",
+        displayName: "LSL Line Style",
+        items: [
+            { displayName: "Solid", value: "solid" },
+            { displayName: "Dashed", value: "dashed" },
+            { displayName: "Dotted", value: "dotted" }
+        ],
+        value: { displayName: "Solid", value: "solid" }
+    });
+
+    lslThickness = new formattingSettings.NumUpDown({
+        name: "lslThickness",
+        displayName: "LSL Thickness",
+        value: 2,
+        options: {
+            minValue: { value: 1, type: powerbi.visuals.ValidatorType.Min },
+            maxValue: { value: 8, type: powerbi.visuals.ValidatorType.Max }
+        }
+    });
+
+    name: string = "specLimitsSettings";
+    displayName: string = "Spec Limits";
+    slices: Array<FormattingSettingsSlice> = [
+        this.showUSL,
+        this.uslColor,
+        this.uslLineStyle,
+        this.uslThickness,
+        this.showLSL,
+        this.lslColor,
+        this.lslLineStyle,
+        this.lslThickness
+    ];
+}
+
+class StatsSummaryCard extends FormattingSettingsCard {
+    showStatsSummary = new formattingSettings.ToggleSwitch({
+        name: "showStatsSummary",
+        displayName: "Show Stats Summary",
+        value: true
+    });
+
+    statsSummaryColor = new formattingSettings.ColorPicker({
+        name: "statsSummaryColor",
+        displayName: "Text Color",
+        value: { value: "#333333" }
+    });
+
+    statsSummaryFontSize = new formattingSettings.NumUpDown({
+        name: "statsSummaryFontSize",
+        displayName: "Font Size",
+        value: 11,
+        options: {
+            minValue: { value: 8, type: powerbi.visuals.ValidatorType.Min },
+            maxValue: { value: 20, type: powerbi.visuals.ValidatorType.Max }
+        }
+    });
+
+    name: string = "statsSummarySettings";
+    displayName: string = "Stats Summary";
+    slices: Array<FormattingSettingsSlice> = [
+        this.showStatsSummary,
+        this.statsSummaryColor,
+        this.statsSummaryFontSize
+    ];
+}
+
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     binningSettingsCard = new BinningSettingsCard();
     xAxisSettingsCard = new XAxisSettingsCard();
@@ -429,6 +542,8 @@ export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     axisSettingsCard = new AxisSettingsCard();
     tooltipSettingsCard = new TooltipSettingsCard();
     selectionSettingsCard = new SelectionSettingsCard();
+    specLimitsSettingsCard = new SpecLimitsCard();
+    statsSummaryCard = new StatsSummaryCard();
 
     cards = [
         this.binningSettingsCard,
@@ -438,7 +553,9 @@ export class VisualFormattingSettingsModel extends FormattingSettingsModel {
         this.paretoSettingsCard,
         this.axisSettingsCard,
         this.tooltipSettingsCard,
-        this.selectionSettingsCard
+        this.selectionSettingsCard,
+        this.specLimitsSettingsCard,
+        this.statsSummaryCard
     ];
 }
 
@@ -485,6 +602,17 @@ export interface HistogramSettings {
     enableSelection: boolean;
     multiSelect: boolean;
     selectionColor: string;
+    showUSL: boolean;
+    uslColor: string;
+    uslLineStyle: "solid" | "dashed" | "dotted";
+    uslThickness: number;
+    showLSL: boolean;
+    lslColor: string;
+    lslLineStyle: "solid" | "dashed" | "dotted";
+    lslThickness: number;
+    showStatsSummary: boolean;
+    statsSummaryColor: string;
+    statsSummaryFontSize: number;
 }
 
 export function getHistogramSettings(formattingSettings: VisualFormattingSettingsModel): HistogramSettings {
@@ -530,6 +658,17 @@ export function getHistogramSettings(formattingSettings: VisualFormattingSetting
         showCumulative: formattingSettings.tooltipSettingsCard.showCumulative.value,
         enableSelection: formattingSettings.selectionSettingsCard.enableSelection.value,
         multiSelect: formattingSettings.selectionSettingsCard.multiSelect.value,
-        selectionColor: formattingSettings.selectionSettingsCard.selectionColor.value.value
+        selectionColor: formattingSettings.selectionSettingsCard.selectionColor.value.value,
+        showUSL: formattingSettings.specLimitsSettingsCard.showUSL.value,
+        uslColor: formattingSettings.specLimitsSettingsCard.uslColor.value.value,
+        uslLineStyle: formattingSettings.specLimitsSettingsCard.uslLineStyle.value.value as "solid" | "dashed" | "dotted",
+        uslThickness: formattingSettings.specLimitsSettingsCard.uslThickness.value,
+        showLSL: formattingSettings.specLimitsSettingsCard.showLSL.value,
+        lslColor: formattingSettings.specLimitsSettingsCard.lslColor.value.value,
+        lslLineStyle: formattingSettings.specLimitsSettingsCard.lslLineStyle.value.value as "solid" | "dashed" | "dotted",
+        lslThickness: formattingSettings.specLimitsSettingsCard.lslThickness.value,
+        showStatsSummary: formattingSettings.statsSummaryCard.showStatsSummary.value,
+        statsSummaryColor: formattingSettings.statsSummaryCard.statsSummaryColor.value.value,
+        statsSummaryFontSize: formattingSettings.statsSummaryCard.statsSummaryFontSize.value
     };
 }

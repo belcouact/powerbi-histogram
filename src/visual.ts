@@ -18,6 +18,8 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import { VisualFormattingSettingsModel, getHistogramSettings, HistogramSettings } from "./settings";
 
+const MAX_SELECTION_DETAIL = 1000;
+
 interface HistogramBin {
     x0: number;
     x1: number;
@@ -25,6 +27,7 @@ interface HistogramBin {
     cumulative: number;
     percentage: number;
     cumulativePercentage: number;
+    label: string;
     selectionId: ISelectionId;
     valueSelectionIds: ISelectionId[];
     tooltipInfo: VisualTooltipDataItem[];
@@ -38,6 +41,19 @@ interface ViewModel {
     assignedCount: number;
     dataValues: number[];
     settings: HistogramSettings;
+    isCategorical: boolean;
+    hasDetailField: boolean;
+    lsl: number | null;
+    usl: number | null;
+    stats: {
+        n: number;
+        min: number;
+        max: number;
+        mean: number;
+        median: number;
+        stdDev: number;
+        cpk: number | null;
+    };
 }
 
 export class Visual implements IVisual {
@@ -103,8 +119,15 @@ export class Visual implements IVisual {
 
     private calculateAutoBins(dataValues: number[]): { binWidth: number; niceMin: number; niceMax: number; numBins: number } {
         const n = dataValues.length;
-        const min = Math.min(...dataValues);
-        const max = Math.max(...dataValues);
+
+        // FIX 2: Use loop-based min/max to avoid stack overflow on large arrays
+        let min = dataValues[0];
+        let max = dataValues[0];
+        for (let i = 1; i < n; i++) {
+            if (dataValues[i] < min) min = dataValues[i];
+            if (dataValues[i] > max) max = dataValues[i];
+        }
+
         const range = max - min;
 
         const q1 = this.percentile(dataValues, 25);
@@ -153,19 +176,96 @@ export class Visual implements IVisual {
         return sortedArr[lower] * (upper - index) + sortedArr[upper] * (index - lower);
     }
 
+    private extractSpecLimits(dataView: DataView): { lsl: number | null; usl: number | null } {
+        let lsl: number | null = null;
+        let usl: number | null = null;
+
+        if (dataView.table && dataView.table.rows && dataView.table.rows.length > 0 && dataView.table.columns) {
+            const cols = dataView.table.columns;
+            for (let c = 0; c < cols.length; c++) {
+                const col = cols[c];
+                if (!col.roles) continue;
+                if (col.roles["USL"] || col.roles["LSL"]) {
+                    const row = dataView.table.rows[0];
+                    if (row !== undefined && row !== null) {
+                        const v = Number(row[c]);
+                        if (isFinite(v)) {
+                            if (col.roles["USL"]) usl = v;
+                            if (col.roles["LSL"]) lsl = v;
+                        }
+                    }
+                }
+            }
+        } else if (dataView.categorical && dataView.categorical.values && dataView.categorical.values.length > 0) {
+            for (const valCol of dataView.categorical.values) {
+                if (!valCol || !valCol.source || !valCol.source.roles) continue;
+                const roles = valCol.source.roles;
+                if (roles["USL"] && valCol.values && valCol.values.length > 0) {
+                    const v = Number(valCol.values[0]);
+                    if (isFinite(v)) usl = v;
+                } else if (roles["LSL"] && valCol.values && valCol.values.length > 0) {
+                    const v = Number(valCol.values[0]);
+                    if (isFinite(v)) lsl = v;
+                }
+            }
+        }
+
+        return { lsl, usl };
+    }
+
+    private computeStats(dataValues: number[], lsl: number | null, usl: number | null) {
+        const n = dataValues.length;
+        const sorted = [...dataValues].sort((a, b) => a - b);
+        const min = sorted[0];
+        const max = sorted[n - 1];
+        const mean = d3.mean(dataValues) ?? 0;
+        const median = d3.median(dataValues) ?? 0;
+        const stdDev = d3.deviation(dataValues) ?? 0;
+
+        let effectiveLsl = lsl;
+        let effectiveUsl = usl;
+        if (effectiveUsl !== null && effectiveLsl !== null && effectiveUsl <= effectiveLsl) {
+            effectiveUsl = null;
+        }
+
+        let cpk: number | null = null;
+        if (effectiveLsl !== null && effectiveUsl !== null) {
+            const cpu = stdDev > 0 ? (effectiveUsl - mean) / (3 * stdDev) : 0;
+            const cpl = stdDev > 0 ? (mean - effectiveLsl) / (3 * stdDev) : 0;
+            cpk = Math.min(cpu, cpl);
+        } else if (effectiveLsl !== null) {
+            const cpl = stdDev > 0 ? (mean - effectiveLsl) / (3 * stdDev) : 0;
+            cpk = cpl;
+        } else if (effectiveUsl !== null) {
+            const cpu = stdDev > 0 ? (effectiveUsl - mean) / (3 * stdDev) : 0;
+            cpk = cpu;
+        }
+
+        return { n, min, max, mean, median, stdDev, cpk };
+    }
+
+    // FIX 1: fetchMoreData support for segmented data loading
     public update(options: VisualUpdateOptions): void {
         if (!options.dataViews || options.dataViews.length === 0) {
             this.clearVisual();
             return;
         }
 
+        const dataView = options.dataViews[0];
+
+        // Fetch more data if Power BI is sending in segments
+        if (dataView.metadata && dataView.metadata.segment) {
+            this.host.fetchMoreData(true);
+            return; // wait for next update call with more data
+        }
+
         this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(
             VisualFormattingSettingsModel,
-            options.dataViews[0]
+            dataView
         );
 
         const settings = getHistogramSettings(this.formattingSettings);
-        const viewModel = this.transformData(options.dataViews[0], settings);
+        const viewModel = this.transformData(dataView, settings);
 
         if (!viewModel) {
             this.clearVisual();
@@ -176,38 +276,128 @@ export class Visual implements IVisual {
         this.render(viewModel, options.viewport.width, options.viewport.height);
     }
 
-    private transformData(dataView: DataView, settings: HistogramSettings): ViewModel | null {
-        let dataValues: number[] = [];
-        let originalCount = 0;
+    private isNumericValue(value: any): boolean {
+        if (value === null || value === undefined || value === "") return false;
+        if (typeof value === "boolean") return false;
+        if (typeof value === "number") return isFinite(value);
+        if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (trimmed === "") return false;
+            return isFinite(Number(trimmed));
+        }
+        return false;
+    }
 
-        if (dataView.categorical && dataView.categorical.categories && dataView.categorical.categories.length > 0) {
-            const category = dataView.categorical.categories[0];
-            for (let i = 0; i < category.values.length; i++) {
-                const value = category.values[i];
-                if (value !== null && value !== undefined && !isNaN(Number(value))) {
-                    dataValues.push(Number(value));
-                }
-            }
-        } else if (dataView.table && dataView.table.rows && dataView.table.rows.length > 0) {
-            for (let i = 0; i < dataView.table.rows.length; i++) {
-                const row = dataView.table.rows[i];
-                for (let j = 0; j < row.length; j++) {
-                    const value = row[j];
-                    if (value !== null && value !== undefined && !isNaN(Number(value))) {
-                        dataValues.push(Number(value));
+    private transformData(dataView: DataView, settings: HistogramSettings): ViewModel | null {
+        // ── Step 1: Extract raw values from the dataView ──
+        const rawValues: any[] = [];
+        const rowIndices: number[] = [];
+        let hasDetailField = false;
+
+        if (dataView.table && dataView.table.rows && dataView.table.rows.length > 0) {
+            // Detect whether the "detail" role is present and find Values column
+            let valuesColIdx = -1;
+            if (dataView.table.columns) {
+                for (let c = 0; c < dataView.table.columns.length; c++) {
+                    const col = dataView.table.columns[c];
+                    if (col.roles && col.roles["detail"]) {
+                        hasDetailField = true;
+                    }
+                    if (col.roles && col.roles["Values"]) {
+                        valuesColIdx = c;
                     }
                 }
             }
+            // Fallback: if no Values role found, use the last column
+            if (valuesColIdx < 0) {
+                valuesColIdx = (dataView.table.columns?.length ?? 1) - 1;
+            }
+
+            for (let i = 0; i < dataView.table.rows.length; i++) {
+                const value = dataView.table.rows[i][valuesColIdx];
+                if (value !== null && value !== undefined) {
+                    rawValues.push(value);
+                    rowIndices.push(i);
+                }
+            }
+        } else if (dataView.categorical && dataView.categorical.values && dataView.categorical.values.length > 0) {
+            const values = dataView.categorical.values[0];
+            if (values && values.values) {
+                for (let i = 0; i < values.values.length; i++) {
+                    const value = values.values[i];
+                    if (value !== null && value !== undefined) {
+                        rawValues.push(value);
+                        rowIndices.push(i);
+                    }
+                }
+            }
+        } else if (dataView.categorical && dataView.categorical.categories && dataView.categorical.categories.length > 0) {
+            const category = dataView.categorical.categories[0];
+            for (let i = 0; i < category.values.length; i++) {
+                const value = category.values[i];
+                if (value !== null && value !== undefined) {
+                    rawValues.push(value);
+                    rowIndices.push(i);
+                }
+            }
+        }
+
+        if (rawValues.length === 0) {
+            return null;
+        }
+
+        const originalCount = rawValues.length;
+
+        // ── Step 2: Detect if all values are numeric ──
+        const allNumeric = rawValues.every(v => this.isNumericValue(v));
+
+        // ── Step 3: Build selection IDs (FIX 3: skip for large datasets) ──
+        const trackSelectionIds = originalCount <= MAX_SELECTION_DETAIL;
+        const rowSelectionIds: ISelectionId[] = [];
+
+        if (trackSelectionIds) {
+            for (let idx = 0; idx < rawValues.length; idx++) {
+                const rowIdx = rowIndices[idx];
+                let selId: ISelectionId;
+
+                if (dataView.table && dataView.table.identity && dataView.table.identity[rowIdx]) {
+                    selId = this.host.createSelectionIdBuilder()
+                        .withTable(dataView.table, rowIdx)
+                        .createSelectionId() as ISelectionId;
+                } else if (dataView.table && dataView.table.columns && dataView.table.columns[0]) {
+                    selId = this.host.createSelectionIdBuilder()
+                        .withMeasure(dataView.table.columns[0].queryName || String(rawValues[idx]))
+                        .createSelectionId() as ISelectionId;
+                } else {
+                    selId = this.host.createSelectionIdBuilder()
+                        .withMeasure(String(rawValues[idx]))
+                        .createSelectionId() as ISelectionId;
+                }
+                rowSelectionIds.push(selId);
+            }
+        }
+
+        // ── Step 4: Branch — numeric histogram vs categorical frequency chart ──
+        const { lsl, usl } = this.extractSpecLimits(dataView);
+        if (allNumeric) {
+            return this.buildNumericHistogram(rawValues, rowSelectionIds, originalCount, settings, dataView, hasDetailField, trackSelectionIds, lsl, usl);
         } else {
-            return null;
+            return this.buildCategoricalChart(rawValues, rowSelectionIds, originalCount, settings, hasDetailField, trackSelectionIds, lsl, usl);
         }
+    }
 
-        if (dataValues.length === 0) {
-            return null;
-        }
-
-        originalCount = dataValues.length;
-
+    private buildNumericHistogram(
+        rawValues: any[],
+        rowSelectionIds: ISelectionId[],
+        originalCount: number,
+        settings: HistogramSettings,
+        dataView: DataView,
+        hasDetailField: boolean,
+        trackSelectionIds: boolean,
+        lsl: number | null,
+        usl: number | null
+    ): ViewModel {
+        let dataValues: number[] = rawValues.map(v => Number(v));
         let processedValues: number[];
         let dataMin: number;
         let dataMax: number;
@@ -278,34 +468,11 @@ export class Visual implements IVisual {
                 cumulative: 0,
                 percentage: 0,
                 cumulativePercentage: 0,
+                label: `${x0.toFixed(2)} - ${x1.toFixed(2)}`,
                 selectionId: null as unknown as ISelectionId,
                 valueSelectionIds: [],
                 tooltipInfo: []
             });
-        }
-
-        const valueToSelectionIdMap: Map<number, ISelectionId> = new Map();
-        for (let idx = 0; idx < processedValues.length; idx++) {
-            const value = processedValues[idx];
-            if (!valueToSelectionIdMap.has(value)) {
-                if (dataView.categorical && dataView.categorical.categories && dataView.categorical.categories.length > 0) {
-                    const category = dataView.categorical.categories[0];
-                    const categoryIndex = category.values.indexOf(value);
-                    if (categoryIndex >= 0) {
-                        valueToSelectionIdMap.set(value, this.host.createSelectionIdBuilder()
-                            .withCategory(category, categoryIndex)
-                            .createSelectionId() as ISelectionId);
-                    } else {
-                        valueToSelectionIdMap.set(value, this.host.createSelectionIdBuilder()
-                            .withMeasure(String(value))
-                            .createSelectionId() as ISelectionId);
-                    }
-                } else {
-                    valueToSelectionIdMap.set(value, this.host.createSelectionIdBuilder()
-                        .withMeasure(String(value))
-                        .createSelectionId() as ISelectionId);
-                }
-            }
         }
 
         let assignedCount = 0;
@@ -315,23 +482,29 @@ export class Visual implements IVisual {
                 let binIndex = Math.floor((value - dataMin) / binWidth);
                 binIndex = Math.max(0, Math.min(binIndex, numBins - 1));
                 histogramBins[binIndex].count++;
-                const selId = valueToSelectionIdMap.get(value);
-                if (selId && !histogramBins[binIndex].valueSelectionIds.some(existing => JSON.stringify(existing) === JSON.stringify(selId))) {
-                    histogramBins[binIndex].valueSelectionIds.push(selId);
+                if (trackSelectionIds) {
+                    const selId = rowSelectionIds[valIdx];
+                    if (selId) {
+                        histogramBins[binIndex].valueSelectionIds.push(selId);
+                    }
                 }
                 assignedCount++;
             } else if (settings.outlierMode === "includeAll") {
                 if (value < dataMin) {
                     histogramBins[0].count++;
-                    const selId = valueToSelectionIdMap.get(value);
-                    if (selId && !histogramBins[0].valueSelectionIds.some(existing => JSON.stringify(existing) === JSON.stringify(selId))) {
-                        histogramBins[0].valueSelectionIds.push(selId);
+                    if (trackSelectionIds) {
+                        const selId = rowSelectionIds[valIdx];
+                        if (selId) {
+                            histogramBins[0].valueSelectionIds.push(selId);
+                        }
                     }
                 } else {
                     histogramBins[numBins - 1].count++;
-                    const selId = valueToSelectionIdMap.get(value);
-                    if (selId && !histogramBins[numBins - 1].valueSelectionIds.some(existing => JSON.stringify(existing) === JSON.stringify(selId))) {
-                        histogramBins[numBins - 1].valueSelectionIds.push(selId);
+                    if (trackSelectionIds) {
+                        const selId = rowSelectionIds[valIdx];
+                        if (selId) {
+                            histogramBins[numBins - 1].valueSelectionIds.push(selId);
+                        }
                     }
                 }
                 assignedCount++;
@@ -352,15 +525,9 @@ export class Visual implements IVisual {
             bin.percentage = totalCount > 0 ? (bin.count / totalCount) * 100 : 0;
             bin.cumulativePercentage = totalCount > 0 ? (cumulative / totalCount) * 100 : 0;
 
-            if (dataView.categorical && dataView.categorical.categories && dataView.categorical.categories.length > 0) {
-                bin.selectionId = this.host.createSelectionIdBuilder()
-                    .withCategory(dataView.categorical.categories[0], i)
-                    .createSelectionId() as ISelectionId;
-            } else {
-                bin.selectionId = this.host.createSelectionIdBuilder()
-                    .withMeasure(String(i))
-                    .createSelectionId() as ISelectionId;
-            }
+            bin.selectionId = this.host.createSelectionIdBuilder()
+                .withMeasure(String(i))
+                .createSelectionId() as ISelectionId;
 
             bin.tooltipInfo = this.buildTooltipInfo(
                 bin.x0,
@@ -371,11 +538,15 @@ export class Visual implements IVisual {
                 mean,
                 median,
                 stdDev,
-                settings
+                settings,
+                bin.label,
+                false
             );
         }
 
         const maxValue = d3.max(histogramBins, d => d.count) ?? 0;
+
+        const stats = this.computeStats(dataValues, lsl, usl);
 
         return {
             bins: histogramBins,
@@ -384,7 +555,103 @@ export class Visual implements IVisual {
             originalCount,
             assignedCount,
             dataValues,
-            settings
+            settings,
+            isCategorical: false,
+            hasDetailField,
+            lsl,
+            usl,
+            stats
+        };
+    }
+
+    private buildCategoricalChart(
+        rawValues: any[],
+        rowSelectionIds: ISelectionId[],
+        originalCount: number,
+        settings: HistogramSettings,
+        hasDetailField: boolean,
+        trackSelectionIds: boolean,
+        lsl: number | null,
+        usl: number | null
+    ): ViewModel {
+        const frequencyMap = new Map<string, { count: number; selectionIds: ISelectionId[] }>();
+
+        for (let i = 0; i < rawValues.length; i++) {
+            const key = String(rawValues[i]);
+            if (!frequencyMap.has(key)) {
+                frequencyMap.set(key, { count: 0, selectionIds: [] });
+            }
+            const entry = frequencyMap.get(key)!;
+            entry.count++;
+            if (trackSelectionIds) {
+                entry.selectionIds.push(rowSelectionIds[i]);
+            }
+        }
+
+        const sortedEntries = [...frequencyMap.entries()].sort((a, b) => b[1].count - a[1].count);
+
+        const totalCount = rawValues.length;
+        let cumulative = 0;
+
+        const histogramBins: HistogramBin[] = [];
+        for (let i = 0; i < sortedEntries.length; i++) {
+            const [label, entry] = sortedEntries[i];
+            cumulative += entry.count;
+            const percentage = totalCount > 0 ? (entry.count / totalCount) * 100 : 0;
+            const cumulativePercentage = totalCount > 0 ? (cumulative / totalCount) * 100 : 0;
+
+            const bin: HistogramBin = {
+                x0: i,
+                x1: i + 1,
+                count: entry.count,
+                cumulative,
+                percentage,
+                cumulativePercentage,
+                label,
+                selectionId: this.host.createSelectionIdBuilder()
+                    .withMeasure(String(i))
+                    .createSelectionId() as ISelectionId,
+                valueSelectionIds: entry.selectionIds,
+                tooltipInfo: []
+            };
+
+            bin.tooltipInfo = this.buildTooltipInfo(
+                bin.x0,
+                bin.x1,
+                bin.count,
+                bin.percentage,
+                bin.cumulativePercentage,
+                undefined,
+                undefined,
+                undefined,
+                settings,
+                label,
+                true
+            );
+
+            histogramBins.push(bin);
+        }
+
+        const maxValue = d3.max(histogramBins, d => d.count) ?? 0;
+
+        const dataValues = rawValues.map(v => Number(v)).filter(v => !isNaN(v));
+        const stats = dataValues.length > 0 ? this.computeStats(dataValues, lsl, usl) : {
+            n: 0, min: 0, max: 0, mean: 0, median: 0, stdDev: 0, cpk: null
+        };
+
+        return {
+            bins: histogramBins,
+            maxValue,
+            totalCount,
+            originalCount,
+            assignedCount: totalCount,
+            dataValues,
+            settings,
+            isCategorical: true,
+            hasDetailField,
+            lsl,
+            usl,
+            stats
         };
     }
 
@@ -397,11 +664,18 @@ export class Visual implements IVisual {
         mean: number | undefined,
         median: number | undefined,
         stdDev: number | undefined,
-        settings: HistogramSettings
+        settings: HistogramSettings,
+        label: string,
+        isCategorical: boolean
     ): VisualTooltipDataItem[] {
         const tooltipItems: VisualTooltipDataItem[] = [];
 
-        if (settings.showBinRange) {
+        if (isCategorical) {
+            tooltipItems.push({
+                displayName: "Category",
+                value: label
+            });
+        } else if (settings.showBinRange) {
             tooltipItems.push({
                 displayName: "Bin Range",
                 value: `${x0.toFixed(2)} - ${x1.toFixed(2)}`
@@ -427,7 +701,7 @@ export class Visual implements IVisual {
             });
         }
 
-        if (settings.showStatistics) {
+        if (settings.showStatistics && !isCategorical) {
             tooltipItems.push({
                 displayName: "Mean",
                 value: mean?.toFixed(2) ?? "N/A"
@@ -446,7 +720,7 @@ export class Visual implements IVisual {
     }
 
     private render(viewModel: ViewModel, width: number, height: number): void {
-        const { settings, bins, maxValue, totalCount, originalCount, assignedCount } = viewModel;
+        const { settings, bins, maxValue, totalCount, originalCount, assignedCount, isCategorical, hasDetailField, lsl, usl, stats } = viewModel;
 
         this.svg
             .attr("width", width)
@@ -454,11 +728,49 @@ export class Visual implements IVisual {
 
         this.mainGroup.selectAll("*").remove();
 
+        // ── Warning banner detection ──
+        const showWarning = false;
+        const warningHeight = showWarning ? 35 : 0;
+
+        const marginTop = this.margin.top + warningHeight;
         const innerWidth = width - this.margin.left - this.margin.right;
-        const innerHeight = height - this.margin.top - this.margin.bottom;
+        const innerHeight = height - marginTop - this.margin.bottom;
 
         const g = this.mainGroup
-            .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
+            .attr("transform", `translate(${this.margin.left},${marginTop})`);
+
+        // ── Render warning banner if needed ──
+        if (showWarning) {
+            const warningGroup = this.mainGroup.append("g")
+                .classed("warning-banner", true)
+                .attr("transform", `translate(${this.margin.left},${this.margin.top - 5})`);
+
+            warningGroup.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", innerWidth)
+                .attr("height", 28)
+                .attr("rx", 4)
+                .attr("ry", 4)
+                .attr("fill", "#FFF3CD")
+                .attr("stroke", "#FFD700")
+                .attr("stroke-width", 1);
+
+            warningGroup.append("text")
+                .attr("x", 8)
+                .attr("y", 19)
+                .attr("font-size", "12px")
+                .attr("fill", "#856404")
+                .text("\u26A0");
+
+            warningGroup.append("text")
+                .attr("x", 24)
+                .attr("y", 18)
+                .attr("font-size", "11px")
+                .attr("fill", "#856404")
+                .attr("font-family", '"Segoe UI", sans-serif')
+                .text("Data may be grouped. Add a unique ID (e.g., Sample Number) to the Detail field to show all data points.");
+        }
 
         const firstBin = bins[0];
         const lastBin = bins[bins.length - 1];
@@ -500,6 +812,106 @@ export class Visual implements IVisual {
                 .attr("stroke", settings.gridLineColor)
                 .attr("stroke-opacity", 0.5)
                 .attr("stroke-dasharray", "3,3");
+        }
+
+        if (!isCategorical) {
+            const getDashArray = (style: string) => style === "dashed" ? "6,4" : style === "dotted" ? "2,3" : "none";
+
+            if (usl !== null && settings.showUSL) {
+                const uslX = xScaleLinear(usl);
+                if (uslX >= 0 && uslX <= innerWidth) {
+                    g.append("line")
+                        .classed("spec-line-usl", true)
+                        .attr("x1", uslX)
+                        .attr("x2", uslX)
+                        .attr("y1", 0)
+                        .attr("y2", innerHeight)
+                        .attr("stroke", settings.uslColor)
+                        .attr("stroke-width", settings.uslThickness)
+                        .attr("stroke-dasharray", getDashArray(settings.uslLineStyle));
+
+                    g.append("text")
+                        .classed("spec-label-usl", true)
+                        .attr("x", uslX + 4)
+                        .attr("y", 14)
+                        .attr("fill", settings.uslColor)
+                        .attr("font-size", "10px")
+                        .attr("font-weight", "600")
+                        .text(`USL ${usl.toFixed(2)}`);
+                }
+            }
+
+            if (lsl !== null && settings.showLSL) {
+                const lslX = xScaleLinear(lsl);
+                if (lslX >= 0 && lslX <= innerWidth) {
+                    g.append("line")
+                        .classed("spec-line-lsl", true)
+                        .attr("x1", lslX)
+                        .attr("x2", lslX)
+                        .attr("y1", 0)
+                        .attr("y2", innerHeight)
+                        .attr("stroke", settings.lslColor)
+                        .attr("stroke-width", settings.lslThickness)
+                        .attr("stroke-dasharray", getDashArray(settings.lslLineStyle));
+
+                    g.append("text")
+                        .classed("spec-label-lsl", true)
+                        .attr("x", lslX + 4)
+                        .attr("y", 14)
+                        .attr("fill", settings.lslColor)
+                        .attr("font-size", "10px")
+                        .attr("font-weight", "600")
+                        .text(`LSL ${lsl.toFixed(2)}`);
+                }
+            }
+        }
+
+        if (settings.showStatsSummary && !isCategorical) {
+            const fontSize = settings.statsSummaryFontSize;
+            const lineH = fontSize * 1.4;
+            const padX = 8;
+            const padY = 6;
+            const boxW = 160;
+            const boxH = stats.cpk !== null ? lineH * 8 + padY * 2 : lineH * 7 + padY * 2;
+
+            const statsGroup = g.append("g")
+                .classed("stats-summary", true)
+                .attr("transform", `translate(${innerWidth - boxW - 4}, 0)`);
+
+            statsGroup.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", boxW)
+                .attr("height", boxH)
+                .attr("rx", 4)
+                .attr("ry", 4)
+                .attr("fill", "#ffffff")
+                .attr("fill-opacity", 0.88)
+                .attr("stroke", "#cccccc")
+                .attr("stroke-width", 1);
+
+            const textColor = settings.statsSummaryColor;
+            const rows: string[] = [
+                `n     = ${stats.n.toLocaleString()}`,
+                `Min  = ${stats.min.toFixed(2)}`,
+                `Max  = ${stats.max.toFixed(2)}`,
+                `Mean = ${stats.mean.toFixed(2)}`,
+                `Med  = ${stats.median.toFixed(2)}`,
+                `SD    = ${stats.stdDev.toFixed(2)}`
+            ];
+            if (stats.cpk !== null) {
+                rows.push(`Cpk  = ${stats.cpk.toFixed(3)}`);
+            }
+
+            rows.forEach((row, i) => {
+                statsGroup.append("text")
+                    .attr("x", padX)
+                    .attr("y", padY + fontSize + i * lineH)
+                    .attr("fill", textColor)
+                    .attr("font-size", fontSize)
+                    .attr("font-family", '"Segoe UI", sans-serif')
+                    .text(row);
+            });
         }
 
         const barWidth = xScaleBand.bandwidth();
@@ -553,18 +965,36 @@ export class Visual implements IVisual {
                 });
         }
 
+        // ── X-Axis ──
         if (settings.showXAxis) {
-            const xAxis = d3.axisBottom(xScaleLinear)
-                .ticks(Math.min(bins.length, 10))
-                .tickFormat(d3.format(".2s"));
+            if (isCategorical) {
+                const xScaleCat = d3.scaleBand<string>()
+                    .domain(bins.map(b => b.label))
+                    .range([0, innerWidth])
+                    .padding(settings.barGap);
 
-            g.append("g")
-                .classed("x-axis", true)
-                .attr("transform", `translate(0,${innerHeight})`)
-                .call(xAxis)
-                .selectAll("text")
-                .attr("transform", `rotate(${settings.xAxisLabelAngle})`)
-                .style("text-anchor", settings.xAxisLabelAngle !== 0 ? "end" : "middle");
+                const xAxisCat = d3.axisBottom(xScaleCat);
+
+                g.append("g")
+                    .classed("x-axis", true)
+                    .attr("transform", `translate(0,${innerHeight})`)
+                    .call(xAxisCat)
+                    .selectAll("text")
+                    .attr("transform", `rotate(${settings.xAxisLabelAngle})`)
+                    .style("text-anchor", settings.xAxisLabelAngle !== 0 ? "end" : "middle");
+            } else {
+                const xAxis = d3.axisBottom(xScaleLinear)
+                    .ticks(Math.min(bins.length, 10))
+                    .tickFormat(d3.format(".2s"));
+
+                g.append("g")
+                    .classed("x-axis", true)
+                    .attr("transform", `translate(0,${innerHeight})`)
+                    .call(xAxis)
+                    .selectAll("text")
+                    .attr("transform", `rotate(${settings.xAxisLabelAngle})`)
+                    .style("text-anchor", settings.xAxisLabelAngle !== 0 ? "end" : "middle");
+            }
 
             if (settings.xAxisTitle) {
                 g.append("text")
@@ -625,7 +1055,7 @@ export class Visual implements IVisual {
             .curve(d3.curveLinear);
 
         const dashArray = settings.paretoLineStyle === "dashed" ? "5,5" :
-                         settings.paretoLineStyle === "dotted" ? "2,2" : "none";
+            settings.paretoLineStyle === "dotted" ? "2,2" : "none";
 
         g.append("path")
             .datum(bins)
