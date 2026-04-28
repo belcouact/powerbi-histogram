@@ -10,7 +10,7 @@ declare class BinningSettingsCard extends FormattingSettingsCard {
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
 }
-declare class XAxisSettingsCard extends FormattingSettingsCard {
+declare class DataRangeCard extends FormattingSettingsCard {
     useManualXAxis: formattingSettings.ToggleSwitch;
     xAxisMin: formattingSettings.NumUpDown;
     xAxisMax: formattingSettings.NumUpDown;
@@ -37,6 +37,9 @@ declare class DataLabelSettingsCard extends FormattingSettingsCard {
     dataLabelType: formattingSettings.ItemDropdown;
     dataLabelColor: formattingSettings.ColorPicker;
     dataLabelFontSize: formattingSettings.NumUpDown;
+    showStatsSummary: formattingSettings.ToggleSwitch;
+    statsSummaryColor: formattingSettings.ColorPicker;
+    statsSummaryFontSize: formattingSettings.NumUpDown;
     name: string;
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
@@ -55,12 +58,12 @@ declare class ParetoSettingsCard extends FormattingSettingsCard {
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
 }
-declare class AxisSettingsCard extends FormattingSettingsCard {
+declare class AxisCard extends FormattingSettingsCard {
     showXAxis: formattingSettings.ToggleSwitch;
-    showYAxis: formattingSettings.ToggleSwitch;
     xAxisTitle: formattingSettings.TextInput;
-    yAxisTitle: formattingSettings.TextInput;
     xAxisLabelAngle: formattingSettings.NumUpDown;
+    showYAxis: formattingSettings.ToggleSwitch;
+    yAxisTitle: formattingSettings.TextInput;
     showGridLines: formattingSettings.ToggleSwitch;
     gridLineColor: formattingSettings.ColorPicker;
     name: string;
@@ -97,26 +100,27 @@ declare class SpecLimitsCard extends FormattingSettingsCard {
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
 }
-declare class StatsSummaryCard extends FormattingSettingsCard {
-    showStatsSummary: formattingSettings.ToggleSwitch;
-    statsSummaryColor: formattingSettings.ColorPicker;
-    statsSummaryFontSize: formattingSettings.NumUpDown;
+declare class DistributionCurveCard extends FormattingSettingsCard {
+    showNormalCurve: formattingSettings.ToggleSwitch;
+    normalCurveColor: formattingSettings.ColorPicker;
+    normalCurveThickness: formattingSettings.NumUpDown;
+    normalCurveLineStyle: formattingSettings.ItemDropdown;
     name: string;
     displayName: string;
     slices: Array<FormattingSettingsSlice>;
 }
 export declare class VisualFormattingSettingsModel extends FormattingSettingsModel {
     binningSettingsCard: BinningSettingsCard;
-    xAxisSettingsCard: XAxisSettingsCard;
+    dataRangeCard: DataRangeCard;
     barAppearanceSettingsCard: BarAppearanceSettingsCard;
     dataLabelSettingsCard: DataLabelSettingsCard;
+    axisCard: AxisCard;
+    specLimitsSettingsCard: SpecLimitsCard;
+    distributionCurveCard: DistributionCurveCard;
     paretoSettingsCard: ParetoSettingsCard;
-    axisSettingsCard: AxisSettingsCard;
     tooltipSettingsCard: TooltipSettingsCard;
     selectionSettingsCard: SelectionSettingsCard;
-    specLimitsSettingsCard: SpecLimitsCard;
-    statsSummaryCard: StatsSummaryCard;
-    cards: (BinningSettingsCard | XAxisSettingsCard | BarAppearanceSettingsCard | DataLabelSettingsCard | ParetoSettingsCard | AxisSettingsCard | TooltipSettingsCard | SelectionSettingsCard | SpecLimitsCard | StatsSummaryCard)[];
+    cards: (BinningSettingsCard | DataRangeCard | BarAppearanceSettingsCard | DataLabelSettingsCard | AxisCard | SpecLimitsCard | DistributionCurveCard | ParetoSettingsCard | TooltipSettingsCard | SelectionSettingsCard)[];
 }
 export interface HistogramSettings {
     binMode: "auto" | "fixedCount" | "fixedWidth";
@@ -172,6 +176,10 @@ export interface HistogramSettings {
     showStatsSummary: boolean;
     statsSummaryColor: string;
     statsSummaryFontSize: number;
+    showNormalCurve: boolean;
+    normalCurveColor: string;
+    normalCurveThickness: number;
+    normalCurveLineStyle: "solid" | "dashed" | "dotted";
 }
 export declare function getHistogramSettings(formattingSettings: VisualFormattingSettingsModel): HistogramSettings;
 export {};

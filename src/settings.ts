@@ -46,7 +46,7 @@ class BinningSettingsCard extends FormattingSettingsCard {
     ];
 }
 
-class XAxisSettingsCard extends FormattingSettingsCard {
+class DataRangeCard extends FormattingSettingsCard {
     useManualXAxis = new formattingSettings.ToggleSwitch({
         name: "useManualXAxis",
         displayName: "Manual Range",
@@ -95,8 +95,8 @@ class XAxisSettingsCard extends FormattingSettingsCard {
         }
     });
 
-    name: string = "xAxisSettings";
-    displayName: string = "X-Axis Range";
+    name: string = "xAxisRangeSettings";
+    displayName: string = "Data Range";
     slices: Array<FormattingSettingsSlice> = [
         this.useManualXAxis,
         this.xAxisMin,
@@ -111,7 +111,7 @@ class BarAppearanceSettingsCard extends FormattingSettingsCard {
     barColor = new formattingSettings.ColorPicker({
         name: "barColor",
         displayName: "Bar Color",
-        value: { value: "#4292c6" }
+        value: { value: "#118DFF" }
     });
 
     barOpacity = new formattingSettings.NumUpDown({
@@ -202,13 +202,38 @@ class DataLabelSettingsCard extends FormattingSettingsCard {
         }
     });
 
+    showStatsSummary = new formattingSettings.ToggleSwitch({
+        name: "showStatsSummary",
+        displayName: "Show Stats Summary",
+        value: true
+    });
+
+    statsSummaryColor = new formattingSettings.ColorPicker({
+        name: "statsSummaryColor",
+        displayName: "Stats Color",
+        value: { value: "#333333" }
+    });
+
+    statsSummaryFontSize = new formattingSettings.NumUpDown({
+        name: "statsSummaryFontSize",
+        displayName: "Stats Font Size",
+        value: 9,
+        options: {
+            minValue: { value: 8, type: powerbi.visuals.ValidatorType.Min },
+            maxValue: { value: 20, type: powerbi.visuals.ValidatorType.Max }
+        }
+    });
+
     name: string = "dataLabelSettings";
-    displayName: string = "Data Labels";
+    displayName: string = "Data Labels & Stats";
     slices: Array<FormattingSettingsSlice> = [
         this.showDataLabels,
         this.dataLabelType,
         this.dataLabelColor,
-        this.dataLabelFontSize
+        this.dataLabelFontSize,
+        this.showStatsSummary,
+        this.statsSummaryColor,
+        this.statsSummaryFontSize
     ];
 }
 
@@ -295,16 +320,10 @@ class ParetoSettingsCard extends FormattingSettingsCard {
     ];
 }
 
-class AxisSettingsCard extends FormattingSettingsCard {
+class AxisCard extends FormattingSettingsCard {
     showXAxis = new formattingSettings.ToggleSwitch({
         name: "showXAxis",
         displayName: "Show X Axis",
-        value: true
-    });
-
-    showYAxis = new formattingSettings.ToggleSwitch({
-        name: "showYAxis",
-        displayName: "Show Y Axis",
         value: true
     });
 
@@ -315,21 +334,27 @@ class AxisSettingsCard extends FormattingSettingsCard {
         placeholder: "Enter X axis title"
     });
 
-    yAxisTitle = new formattingSettings.TextInput({
-        name: "yAxisTitle",
-        displayName: "Y Axis Title",
-        value: "Frequency",
-        placeholder: "Enter Y axis title"
-    });
-
     xAxisLabelAngle = new formattingSettings.NumUpDown({
         name: "xAxisLabelAngle",
-        displayName: "X Axis Label Angle",
+        displayName: "Label Angle",
         value: 0,
         options: {
             minValue: { value: -90, type: powerbi.visuals.ValidatorType.Min },
             maxValue: { value: 90, type: powerbi.visuals.ValidatorType.Max }
         }
+    });
+
+    showYAxis = new formattingSettings.ToggleSwitch({
+        name: "showYAxis",
+        displayName: "Show Y Axis",
+        value: true
+    });
+
+    yAxisTitle = new formattingSettings.TextInput({
+        name: "yAxisTitle",
+        displayName: "Y Axis Title",
+        value: "Frequency",
+        placeholder: "Enter Y axis title"
     });
 
     showGridLines = new formattingSettings.ToggleSwitch({
@@ -340,7 +365,7 @@ class AxisSettingsCard extends FormattingSettingsCard {
 
     gridLineColor = new formattingSettings.ColorPicker({
         name: "gridLineColor",
-        displayName: "Grid Line Color",
+        displayName: "Grid Color",
         value: { value: "#e0e0e0" }
     });
 
@@ -348,10 +373,10 @@ class AxisSettingsCard extends FormattingSettingsCard {
     displayName: string = "Axis";
     slices: Array<FormattingSettingsSlice> = [
         this.showXAxis,
-        this.showYAxis,
         this.xAxisTitle,
-        this.yAxisTitle,
         this.xAxisLabelAngle,
+        this.showYAxis,
+        this.yAxisTitle,
         this.showGridLines,
         this.gridLineColor
     ];
@@ -408,7 +433,7 @@ class SelectionSettingsCard extends FormattingSettingsCard {
     selectionColor = new formattingSettings.ColorPicker({
         name: "selectionColor",
         displayName: "Selection Color",
-        value: { value: "#2171b5" }
+        value: { value: "#E66C37" }
     });
 
     name: string = "selectionSettings";
@@ -501,61 +526,73 @@ class SpecLimitsCard extends FormattingSettingsCard {
     ];
 }
 
-class StatsSummaryCard extends FormattingSettingsCard {
-    showStatsSummary = new formattingSettings.ToggleSwitch({
-        name: "showStatsSummary",
-        displayName: "Show Stats Summary",
-        value: true
+class DistributionCurveCard extends FormattingSettingsCard {
+    showNormalCurve = new formattingSettings.ToggleSwitch({
+        name: "showNormalCurve",
+        displayName: "Show Normal Curve",
+        value: false
     });
 
-    statsSummaryColor = new formattingSettings.ColorPicker({
-        name: "statsSummaryColor",
-        displayName: "Text Color",
-        value: { value: "#333333" }
+    normalCurveColor = new formattingSettings.ColorPicker({
+        name: "normalCurveColor",
+        displayName: "Curve Color",
+        value: { value: "#E74C3C" }
     });
 
-    statsSummaryFontSize = new formattingSettings.NumUpDown({
-        name: "statsSummaryFontSize",
-        displayName: "Font Size",
-        value: 11,
+    normalCurveThickness = new formattingSettings.NumUpDown({
+        name: "normalCurveThickness",
+        displayName: "Curve Thickness",
+        value: 2,
         options: {
-            minValue: { value: 8, type: powerbi.visuals.ValidatorType.Min },
-            maxValue: { value: 20, type: powerbi.visuals.ValidatorType.Max }
+            minValue: { value: 1, type: powerbi.visuals.ValidatorType.Min },
+            maxValue: { value: 8, type: powerbi.visuals.ValidatorType.Max }
         }
     });
 
-    name: string = "statsSummarySettings";
-    displayName: string = "Stats Summary";
+    normalCurveLineStyle = new formattingSettings.ItemDropdown({
+        name: "normalCurveLineStyle",
+        displayName: "Line Style",
+        items: [
+            { displayName: "Solid", value: "solid" },
+            { displayName: "Dashed", value: "dashed" },
+            { displayName: "Dotted", value: "dotted" }
+        ],
+        value: { displayName: "Solid", value: "solid" }
+    });
+
+    name: string = "distributionCurveSettings";
+    displayName: string = "Normal Curve";
     slices: Array<FormattingSettingsSlice> = [
-        this.showStatsSummary,
-        this.statsSummaryColor,
-        this.statsSummaryFontSize
+        this.showNormalCurve,
+        this.normalCurveColor,
+        this.normalCurveThickness,
+        this.normalCurveLineStyle
     ];
 }
 
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     binningSettingsCard = new BinningSettingsCard();
-    xAxisSettingsCard = new XAxisSettingsCard();
+    dataRangeCard = new DataRangeCard();
     barAppearanceSettingsCard = new BarAppearanceSettingsCard();
     dataLabelSettingsCard = new DataLabelSettingsCard();
+    axisCard = new AxisCard();
+    specLimitsSettingsCard = new SpecLimitsCard();
+    distributionCurveCard = new DistributionCurveCard();
     paretoSettingsCard = new ParetoSettingsCard();
-    axisSettingsCard = new AxisSettingsCard();
     tooltipSettingsCard = new TooltipSettingsCard();
     selectionSettingsCard = new SelectionSettingsCard();
-    specLimitsSettingsCard = new SpecLimitsCard();
-    statsSummaryCard = new StatsSummaryCard();
 
     cards = [
         this.binningSettingsCard,
-        this.xAxisSettingsCard,
+        this.dataRangeCard,
         this.barAppearanceSettingsCard,
         this.dataLabelSettingsCard,
-        this.paretoSettingsCard,
-        this.axisSettingsCard,
-        this.tooltipSettingsCard,
-        this.selectionSettingsCard,
+        this.axisCard,
         this.specLimitsSettingsCard,
-        this.statsSummaryCard
+        this.distributionCurveCard,
+        this.paretoSettingsCard,
+        this.tooltipSettingsCard,
+        this.selectionSettingsCard
     ];
 }
 
@@ -613,6 +650,10 @@ export interface HistogramSettings {
     showStatsSummary: boolean;
     statsSummaryColor: string;
     statsSummaryFontSize: number;
+    showNormalCurve: boolean;
+    normalCurveColor: string;
+    normalCurveThickness: number;
+    normalCurveLineStyle: "solid" | "dashed" | "dotted";
 }
 
 export function getHistogramSettings(formattingSettings: VisualFormattingSettingsModel): HistogramSettings {
@@ -620,12 +661,12 @@ export function getHistogramSettings(formattingSettings: VisualFormattingSetting
         binMode: formattingSettings.binningSettingsCard.binMode.value.value as "auto" | "fixedCount" | "fixedWidth",
         binCount: formattingSettings.binningSettingsCard.binCount.value,
         binWidth: formattingSettings.binningSettingsCard.binWidth.value,
-        useManualXAxis: formattingSettings.xAxisSettingsCard.useManualXAxis.value,
-        xAxisMin: formattingSettings.xAxisSettingsCard.xAxisMin.value,
-        xAxisMax: formattingSettings.xAxisSettingsCard.xAxisMax.value,
-        manualBinSize: formattingSettings.xAxisSettingsCard.manualBinSize.value,
-        outlierMode: formattingSettings.xAxisSettingsCard.outlierMode.value.value as "includeAll" | "capToRange" | "trimPercentage",
-        trimPercent: formattingSettings.xAxisSettingsCard.trimPercent.value,
+        useManualXAxis: formattingSettings.dataRangeCard.useManualXAxis.value,
+        xAxisMin: formattingSettings.dataRangeCard.xAxisMin.value,
+        xAxisMax: formattingSettings.dataRangeCard.xAxisMax.value,
+        manualBinSize: formattingSettings.dataRangeCard.manualBinSize.value,
+        outlierMode: formattingSettings.dataRangeCard.outlierMode.value.value as "includeAll" | "capToRange" | "trimPercentage",
+        trimPercent: formattingSettings.dataRangeCard.trimPercent.value,
         barColor: formattingSettings.barAppearanceSettingsCard.barColor.value.value,
         barOpacity: formattingSettings.barAppearanceSettingsCard.barOpacity.value / 100,
         showBorder: formattingSettings.barAppearanceSettingsCard.showBorder.value,
@@ -645,13 +686,13 @@ export function getHistogramSettings(formattingSettings: VisualFormattingSetting
         showParetoLabels: formattingSettings.paretoSettingsCard.showParetoLabels.value,
         paretoLabelColor: formattingSettings.paretoSettingsCard.paretoLabelColor.value.value,
         paretoLabelFontSize: formattingSettings.paretoSettingsCard.paretoLabelFontSize.value,
-        showXAxis: formattingSettings.axisSettingsCard.showXAxis.value,
-        showYAxis: formattingSettings.axisSettingsCard.showYAxis.value,
-        xAxisTitle: formattingSettings.axisSettingsCard.xAxisTitle.value,
-        yAxisTitle: formattingSettings.axisSettingsCard.yAxisTitle.value,
-        xAxisLabelAngle: formattingSettings.axisSettingsCard.xAxisLabelAngle.value,
-        showGridLines: formattingSettings.axisSettingsCard.showGridLines.value,
-        gridLineColor: formattingSettings.axisSettingsCard.gridLineColor.value.value,
+        showXAxis: formattingSettings.axisCard.showXAxis.value,
+        showYAxis: formattingSettings.axisCard.showYAxis.value,
+        xAxisTitle: formattingSettings.axisCard.xAxisTitle.value,
+        yAxisTitle: formattingSettings.axisCard.yAxisTitle.value,
+        xAxisLabelAngle: formattingSettings.axisCard.xAxisLabelAngle.value,
+        showGridLines: formattingSettings.axisCard.showGridLines.value,
+        gridLineColor: formattingSettings.axisCard.gridLineColor.value.value,
         showStatistics: formattingSettings.tooltipSettingsCard.showStatistics.value,
         showBinRange: formattingSettings.tooltipSettingsCard.showBinRange.value,
         showPercentage: formattingSettings.tooltipSettingsCard.showPercentage.value,
@@ -667,8 +708,12 @@ export function getHistogramSettings(formattingSettings: VisualFormattingSetting
         lslColor: formattingSettings.specLimitsSettingsCard.lslColor.value.value,
         lslLineStyle: formattingSettings.specLimitsSettingsCard.lslLineStyle.value.value as "solid" | "dashed" | "dotted",
         lslThickness: formattingSettings.specLimitsSettingsCard.lslThickness.value,
-        showStatsSummary: formattingSettings.statsSummaryCard.showStatsSummary.value,
-        statsSummaryColor: formattingSettings.statsSummaryCard.statsSummaryColor.value.value,
-        statsSummaryFontSize: formattingSettings.statsSummaryCard.statsSummaryFontSize.value
+        showStatsSummary: formattingSettings.dataLabelSettingsCard.showStatsSummary.value,
+        statsSummaryColor: formattingSettings.dataLabelSettingsCard.statsSummaryColor.value.value,
+        statsSummaryFontSize: formattingSettings.dataLabelSettingsCard.statsSummaryFontSize.value,
+        showNormalCurve: formattingSettings.distributionCurveCard.showNormalCurve.value,
+        normalCurveColor: formattingSettings.distributionCurveCard.normalCurveColor.value.value,
+        normalCurveThickness: formattingSettings.distributionCurveCard.normalCurveThickness.value,
+        normalCurveLineStyle: formattingSettings.distributionCurveCard.normalCurveLineStyle.value.value as "solid" | "dashed" | "dotted"
     };
 }

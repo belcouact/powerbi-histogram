@@ -114,7 +114,7 @@
       }
     },
     "dataLabelSettings": {
-      "displayName": "Data Labels",
+      "displayName": "Data Labels & Stats",
       "properties": {
         "showDataLabels": {
           "displayName": "Show Data Labels",
@@ -136,6 +136,18 @@
         },
         "dataLabelFontSize": {
           "displayName": "Font Size",
+          "type": { "numeric": true }
+        },
+        "showStatsSummary": {
+          "displayName": "Show Stats Summary",
+          "type": { "bool": true }
+        },
+        "statsSummaryColor": {
+          "displayName": "Stats Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "statsSummaryFontSize": {
+          "displayName": "Stats Font Size",
           "type": { "numeric": true }
         }
       }
@@ -194,29 +206,64 @@
           "displayName": "Show X Axis",
           "type": { "bool": true }
         },
-        "showYAxis": {
-          "displayName": "Show Y Axis",
-          "type": { "bool": true }
-        },
         "xAxisTitle": {
           "displayName": "X Axis Title",
           "type": { "text": true }
         },
+        "xAxisLabelAngle": {
+          "displayName": "Label Angle",
+          "type": { "numeric": true }
+        },
+        "showYAxis": {
+          "displayName": "Show Y Axis",
+          "type": { "bool": true }
+        },
         "yAxisTitle": {
           "displayName": "Y Axis Title",
           "type": { "text": true }
-        },
-        "xAxisLabelAngle": {
-          "displayName": "X Axis Label Angle",
-          "type": { "numeric": true }
         },
         "showGridLines": {
           "displayName": "Show Grid Lines",
           "type": { "bool": true }
         },
         "gridLineColor": {
-          "displayName": "Grid Line Color",
+          "displayName": "Grid Color",
           "type": { "fill": { "solid": { "color": true } } }
+        }
+      }
+    },
+    "xAxisRangeSettings": {
+      "displayName": "Data Range",
+      "properties": {
+        "useManualXAxis": {
+          "displayName": "Manual Range",
+          "type": { "bool": true }
+        },
+        "xAxisMin": {
+          "displayName": "Min Value",
+          "type": { "numeric": true }
+        },
+        "xAxisMax": {
+          "displayName": "Max Value",
+          "type": { "numeric": true }
+        },
+        "manualBinSize": {
+          "displayName": "Bin Size",
+          "type": { "numeric": true }
+        },
+        "outlierMode": {
+          "displayName": "Outlier Handling",
+          "type": {
+            "enumeration": [
+              { "displayName": "Include All", "value": "includeAll" },
+              { "displayName": "Cap to Range", "value": "capToRange" },
+              { "displayName": "Trim Percentage", "value": "trimPercentage" }
+            ]
+          }
+        },
+        "trimPercent": {
+          "displayName": "Trim % (each side)",
+          "type": { "numeric": true }
         }
       }
     },
@@ -303,6 +350,31 @@
         }
       }
     },
+    "distributionCurveSettings": {
+      "displayName": "Normal Curve",
+      "properties": {
+        "showNormalCurve": {
+          "displayName": "Show Normal Curve",
+          "type": { "bool": true }
+        },
+        "normalCurveColor": {
+          "displayName": "Curve Color",
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "normalCurveThickness": {
+          "displayName": "Curve Thickness",
+          "type": { "numeric": true }
+        },
+        "normalCurveLineStyle": {
+          "displayName": "Line Style",
+          "type": { "enumeration": [
+            { "displayName": "Solid", "value": "solid" },
+            { "displayName": "Dashed", "value": "dashed" },
+            { "displayName": "Dotted", "value": "dotted" }
+          ]}
+        }
+      }
+    },
     "statsSummarySettings": {
       "displayName": "Stats Summary",
       "properties": {
@@ -337,7 +409,7 @@
             { "for": { "in": "LSL" }, "min": 0 }
           ],
           "dataReductionAlgorithm": {
-            "top": { "count": 30000 }
+            "window": { "count": 30000 }
           }
         }
       }

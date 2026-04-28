@@ -868,11 +868,11 @@ export class Visual implements IVisual {
 
         if (settings.showStatsSummary && !isCategorical) {
             const fontSize = settings.statsSummaryFontSize;
-            const lineH = fontSize * 1.4;
-            const padX = 8;
-            const padY = 6;
-            const boxW = 160;
-            const boxH = stats.cpk !== null ? lineH * 8 + padY * 2 : lineH * 7 + padY * 2;
+            const lineH = fontSize * 1.35;
+            const padX = 6;
+            const padY = 4;
+            const boxW = 128;
+            const boxH = stats.cpk !== null ? lineH * 7 + padY * 2 : lineH * 6 + padY * 2;
 
             const statsGroup = g.append("g")
                 .classed("stats-summary", true)
@@ -883,8 +883,8 @@ export class Visual implements IVisual {
                 .attr("y", 0)
                 .attr("width", boxW)
                 .attr("height", boxH)
-                .attr("rx", 4)
-                .attr("ry", 4)
+                .attr("rx", 3)
+                .attr("ry", 3)
                 .attr("fill", "#ffffff")
                 .attr("fill-opacity", 0.88)
                 .attr("stroke", "#cccccc")
@@ -892,15 +892,14 @@ export class Visual implements IVisual {
 
             const textColor = settings.statsSummaryColor;
             const rows: string[] = [
-                `n     = ${stats.n.toLocaleString()}`,
-                `Min  = ${stats.min.toFixed(2)}`,
-                `Max  = ${stats.max.toFixed(2)}`,
-                `Mean = ${stats.mean.toFixed(2)}`,
-                `Med  = ${stats.median.toFixed(2)}`,
-                `SD    = ${stats.stdDev.toFixed(2)}`
+                `n   = ${stats.n.toLocaleString()}`,
+                `Min = ${stats.min.toFixed(2)}`,
+                `Max = ${stats.max.toFixed(2)}`,
+                `Med = ${stats.median.toFixed(2)}`,
+                `SD  = ${stats.stdDev.toFixed(2)}`
             ];
             if (stats.cpk !== null) {
-                rows.push(`Cpk  = ${stats.cpk.toFixed(3)}`);
+                rows.push(`Cpk = ${stats.cpk.toFixed(3)}`);
             }
 
             rows.forEach((row, i) => {
@@ -963,6 +962,43 @@ export class Visual implements IVisual {
                         return `${d.count} (${d.percentage.toFixed(1)}%)`;
                     }
                 });
+        }
+
+        // ── Normal Distribution Curve ──
+        if (settings.showNormalCurve && !isCategorical && stats && stats.stdDev > 0) {
+            const mean = stats.mean;
+            const sd = stats.stdDev;
+            const numPoints = 100;
+            const normalPdf = (x: number) => (1 / (sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / sd, 2));
+            const maxPdf = normalPdf(mean);
+            const xMin = dataMin - (dataMax - dataMin) * 0.1;
+            const xMax = dataMax + (dataMax - dataMin) * 0.1;
+
+            const curvePoints: { x: number; y: number }[] = [];
+            for (let i = 0; i <= numPoints; i++) {
+                const xVal = xMin + (xMax - xMin) * (i / numPoints);
+                const pdfVal = normalPdf(xVal);
+                const yVal = (pdfVal / maxPdf) * maxValue * 1.1;
+                curvePoints.push({ x: xVal, y: yVal });
+            }
+
+            const yScaleCurve = d3.scaleLinear().domain([0, maxValue * 1.1]).range([innerHeight, 0]);
+
+            const lineGen = d3.line<{ x: number; y: number }>()
+                .x(d => xScaleLinear(d.x))
+                .y(d => yScaleCurve(d.y))
+                .curve(d3.curveBasis);
+
+            const normalDash = settings.normalCurveLineStyle === "dashed" ? "6,4" : settings.normalCurveLineStyle === "dotted" ? "2,3" : "none";
+
+            g.append("path")
+                .classed("normal-curve", true)
+                .datum(curvePoints)
+                .attr("fill", "none")
+                .attr("stroke", settings.normalCurveColor)
+                .attr("stroke-width", settings.normalCurveThickness)
+                .attr("stroke-dasharray", normalDash)
+                .attr("d", lineGen);
         }
 
         // ── X-Axis ──
